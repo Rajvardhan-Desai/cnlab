@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VIT Semester Result</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link
+    rel="stylesheet"
+    href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+  />
+</head>
+<body class="bg-light">
+<div id="root" class="container py-4"></div>
+
+<script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+<script type="text/babel">
+function App() {
+  const [regNo, setRegNo] = React.useState("");
+  const [name, setName] = React.useState("");
+  const [subjects, setSubjects] = React.useState([
+    { name: "Subject 1", mse: "", ese: "" },
+    { name: "Subject 2", mse: "", ese: "" },
+    { name: "Subject 3", mse: "", ese: "" },
+    { name: "Subject 4", mse: "", ese: "" },
+  ]);
+  const [result, setResult] = React.useState(null);
+
+  const handleSubjectChange = (index, field, value) => {
+    const updated = subjects.slice();
+    updated[index][field] = value;
+    setSubjects(updated);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const payload = { regNo, name, subjects };
+    try {
+      const res = await fetch("http://localhost:8080/api/results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      setResult(data);
+    } catch (err) {
+      alert("Error connecting to backend: " + err);
+    }
+  };
+
+  return (
+    <div>
+      <h1 className="h3 text-center mb-4">
+        VIT Semester Result (MSE 30%, ESE 70%)
+      </h1>
+
+      <form onSubmit={handleSubmit} className="card p-3 shadow-sm">
+        <div className="form-row">
+          <div className="form-group col-md-6">
+            <label>Registration No</label>
+            <input
+              className="form-control"
+              value={regNo}
+              onChange={(e) => setRegNo(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group col-md-6">
+            <label>Student Name</label>
+            <input
+              className="form-control"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+
+        <h2 className="h5 mt-3">Subjects</h2>
+        <div className="table-responsive">
+          <table className="table table-bordered table-sm">
+            <thead className="thead-light">
+              <tr>
+                <th>Subject</th>
+                <th>MSE (100)</th>
+                <th>ESE (100)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {subjects.map((sub, i) => (
+                <tr key={i}>
+                  <td>
+                    <input
+                      className="form-control form-control-sm"
+                      value={sub.name}
+                      onChange={(e) =>
+                        handleSubjectChange(i, "name", e.target.value)
+                      }
+                      required
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      className="form-control form-control-sm"
+                      value={sub.mse}
+                      onChange={(e) =>
+                        handleSubjectChange(i, "mse", e.target.value)
+                      }
+                      required
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      className="form-control form-control-sm"
+                      value={sub.ese}
+                      onChange={(e) =>
+                        handleSubjectChange(i, "ese", e.target.value)
+                      }
+                      required
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <button className="btn btn-primary btn-block mt-2">
+          Save &amp; Calculate
+        </button>
+      </form>
+
+      {result && (
+        <div className="card mt-4 p-3 shadow-sm">
+          <h2 className="h5">Result Summary</h2>
+          <p>
+            <strong>{result.name}</strong> ({result.regNo})
+          </p>
+          <div className="table-responsive">
+            <table className="table table-sm table-striped">
+              <thead>
+                <tr>
+                  <th>Subject</th>
+                  <th>MSE</th>
+                  <th>ESE</th>
+                  <th>Total (30% + 70%)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.subjects.map((s, i) => (
+                  <tr key={i}>
+                    <td>{s.name}</td>
+                    <td>{s.mse}</td>
+                    <td>{s.ese}</td>
+                    <td>{s.total.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mb-0">
+            <strong>Overall Percentage: </strong>
+            {result.overallPercentage.toFixed(2)}%
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.render(<App />, document.getElementById("root"));
+</script>
+</body>
+</html>
