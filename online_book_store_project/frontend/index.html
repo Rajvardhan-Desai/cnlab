@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Online Book Store</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Bootstrap CSS -->
+  <link
+    rel="stylesheet"
+    href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+  />
+</head>
+<body class="bg-light">
+<div id="root" class="container py-4"></div>
+
+<!-- React + ReactDOM + Babel -->
+<script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+<script type="text/babel">
+const API_BASE = "http://localhost:4000";
+
+function App() {
+  const [page, setPage] = React.useState("home");   // home | login | catalogue | register
+  const [loginEmail, setLoginEmail] = React.useState("");
+  const [loginPassword, setLoginPassword] = React.useState("");
+  const [loginMsg, setLoginMsg] = React.useState("");
+
+  const [regData, setRegData] = React.useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+  const [regMsg, setRegMsg] = React.useState("");
+
+  const [books, setBooks] = React.useState([]);
+  const [booksLoaded, setBooksLoaded] = React.useState(false);
+
+  const loadBooks = async () => {
+    try {
+      const res = await fetch(API_BASE + "/api/books");
+      const data = await res.json();
+      setBooks(data);
+      setBooksLoaded(true);
+    } catch (err) {
+      alert("Error loading books: " + err);
+    }
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginMsg("");
+    try {
+      const res = await fetch(API_BASE + "/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setLoginMsg(data.message || "Login failed");
+      } else {
+        setLoginMsg("Welcome, " + data.name + "!");
+      }
+    } catch (err) {
+      setLoginMsg("Error: " + err);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setRegMsg("");
+    try {
+      const res = await fetch(API_BASE + "/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(regData),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRegMsg(data.message || "Registration failed");
+      } else {
+        setRegMsg("Registration successful!");
+        setRegData({ name: "", email: "", password: "" });
+      }
+    } catch (err) {
+      setRegMsg("Error: " + err);
+    }
+  };
+
+  const renderHome = () => (
+    <div className="text-center">
+      <h1 className="mb-3">VIT Online Book Store</h1>
+      <p className="lead">
+        Browse technical and academic books for your semester, anywhere, anytime.
+      </p>
+      <button className="btn btn-primary m-2" onClick={() => setPage("catalogue")}>
+        View Catalogue
+      </button>
+      <button className="btn btn-outline-secondary m-2" onClick={() => setPage("login")}>
+        Login
+      </button>
+    </div>
+  );
+
+  const renderLogin = () => (
+    <div className="row justify-content-center">
+      <div className="col-md-6">
+        <div className="card shadow-sm">
+          <div className="card-body">
+            <h3 className="h5 mb-3 text-center">Login</h3>
+            <form onSubmit={handleLogin}>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Password</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <button className="btn btn-primary btn-block" type="submit">
+                Login
+              </button>
+            </form>
+            {loginMsg && <p className="mt-3 text-center">{loginMsg}</p>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCatalogue = () => (
+    <div>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h3 className="h5 mb-0">Book Catalogue</h3>
+        <button
+          className="btn btn-sm btn-outline-primary"
+          onClick={loadBooks}
+        >
+          {booksLoaded ? "Refresh" : "Load Books"}
+        </button>
+      </div>
+      <div className="row">
+        {books.map((b) => (
+          <div className="col-md-3 col-sm-6 mb-3" key={b._id}>
+            <div className="card h-100 shadow-sm">
+              <div className="card-body d-flex flex-column">
+                <h5 className="card-title">{b.title}</h5>
+                <h6 className="card-subtitle mb-2 text-muted">{b.author}</h6>
+                <p className="mt-auto mb-0 font-weight-bold">
+                  ₹ {b.price}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+        {booksLoaded && books.length === 0 && (
+          <p className="mx-3">No books available.</p>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderRegister = () => (
+    <div className="row justify-content-center">
+      <div className="col-md-6">
+        <div className="card shadow-sm">
+          <div className="card-body">
+            <h3 className="h5 mb-3 text-center">User Registration</h3>
+            <form onSubmit={handleRegister}>
+              <div className="form-group">
+                <label>Name</label>
+                <input
+                  className="form-control"
+                  value={regData.name}
+                  onChange={(e) =>
+                    setRegData({ ...regData, name: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={regData.email}
+                  onChange={(e) =>
+                    setRegData({ ...regData, email: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Password</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  value={regData.password}
+                  onChange={(e) =>
+                    setRegData({ ...regData, password: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <button className="btn btn-success btn-block" type="submit">
+                Register
+              </button>
+            </form>
+            {regMsg && <p className="mt-3 text-center">{regMsg}</p>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Navbar */}
+      <nav className="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <span className="navbar-brand">VIT Online Book Store</span>
+        <button
+          className="navbar-toggler"
+          type="button"
+          data-toggle="collapse"
+          data-target="#nav"
+        >
+          <span className="navbar-toggler-icon"></span>
+        </button>
+        <div className="collapse navbar-collapse" id="nav">
+          <ul className="navbar-nav ml-auto">
+            <li className="nav-item">
+              <button
+                className={"btn btn-link nav-link " + (page === "home" ? "active" : "")}
+                onClick={() => setPage("home")}
+              >
+                Home
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={"btn btn-link nav-link " + (page === "catalogue" ? "active" : "")}
+                onClick={() => { setPage("catalogue"); loadBooks(); }}
+              >
+                Catalogue
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={"btn btn-link nav-link " + (page === "login" ? "active" : "")}
+                onClick={() => setPage("login")}
+              >
+                Login
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={"btn btn-link nav-link " + (page === "register" ? "active" : "")}
+                onClick={() => setPage("register")}
+              >
+                Register
+              </button>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      {/* Page content */}
+      {page === "home" && renderHome()}
+      {page === "login" && renderLogin()}
+      {page === "catalogue" && renderCatalogue()}
+      {page === "register" && renderRegister()}
+    </div>
+  );
+}
+
+ReactDOM.render(<App />, document.getElementById("root"));
+</script>
+
+<!-- Bootstrap JS (for navbar toggler) -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

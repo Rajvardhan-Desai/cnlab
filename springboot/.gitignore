@@ -38,3 +38,6 @@ npm-debug.log
 yarn-error.log
 dist/
 build/
+
+# Projects
+online_book_store_project/
